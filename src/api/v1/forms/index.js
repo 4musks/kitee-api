@@ -79,3 +79,182 @@ router.get("/:formRef", async (req, res) => {
             .json({ success: false, message: INTERNAL_SERVER_ERROR_MESSAGE });
     }
 });
+
+// PUT a particular form for user
+router.put("/", async (req, res) => {
+    try {
+      const token = await validateToken(req.headers);
+  
+      if (token.error) {
+        return res
+          .status(token.status)
+          .json({ error: true, message: token.message });
+      }
+  
+      const { userId } = token;
+  
+      const {
+        title,
+        formRef,
+        questions,
+        isEmailNotificationEnabled,
+        shouldPublish,
+        customMetadata
+      } = req.body;
+  
+      const fieldsToUpdate = {};
+  
+      if (title) {
+        fieldsToUpdate.title = title;
+      }
+  
+      if (isEmailNotificationEnabled !== null) {
+        fieldsToUpdate.isEmailNotificationEnabled = isEmailNotificationEnabled;
+      }
+  
+      if (shouldPublish !== null) {
+        fieldsToUpdate.shouldPublish = shouldPublish;
+      }
+  
+      if (customMetadata) {
+        fieldsToUpdate.customMetadata = customMetadata;
+      }
+  
+      if (questions !== null && questions.length) {
+        fieldsToUpdate.questions = questions;
+  
+        const insights = await InsightsModel.findOne({
+          formRef
+        });
+  
+        if (!insights) {
+          // create new insights object
+  
+          await new InsightsModel({
+            formRef,
+            opens: 0,
+            starts: 0,
+            completions: 0,
+            completionRate: 0.0,
+            questions: questions.map((question) => ({
+              id: question.id,
+              type: question.type,
+              questionValue: question.questionValue,
+              views: 0
+            }))
+          }).save();
+        } else {
+          // update existing insights object
+  
+          const newQuestions = [];
+  
+          const { questions: insightQuestions } = insights;
+  
+          questions.map((question) => {
+            const newQuestion = {
+              id: question.id,
+              type: question.type,
+              questionValue: question.questionValue
+            };
+  
+            const foundQuestion = insightQuestions.find(
+              (insightQuestion) => insightQuestion.id === question.id
+            );
+  
+            if (foundQuestion) {
+              newQuestion.views = foundQuestion.views;
+            } else {
+              newQuestion.views = 0;
+            }
+  
+            newQuestions.push(newQuestion);
+          });
+  
+          await InsightsModel.findOneAndUpdate(
+            { formRef },
+            {
+              questions: newQuestions
+            }
+          );
+        }
+      }
+  
+      const form = await FormsModel.findOneAndUpdate(
+        { formRef, ownerId: userId },
+        fieldsToUpdate,
+        { new: true, upsert: true }
+      );
+  
+      return res.status(200).json({ success: true, data: form });
+    } catch (error) {
+      logger.error("PUT /api/v1/forms -> error : ", error);
+  
+      return res
+        .status(500)
+        .json({ success: false, message: INTERNAL_SERVER_ERROR_MESSAGE });
+    }
+  });
+  
+  // PUT a published form for user
+  router.put("/publish", async (req, res) => {
+    try {
+      const token = await validateToken(req.headers);
+  
+      if (token.error) {
+        return res
+          .status(token.status)
+          .json({ error: true, message: token.message });
+      }
+  
+      const { userId } = token;
+  
+      const { formRef, title, questions } = req.body;
+  
+      const publishedForm = await PublishedFormsModel.findOneAndUpdate(
+        { formRef, ownerId: userId },
+        { title, questions },
+        { new: true, upsert: true }
+      );
+  
+      return res.status(200).json({ success: true, data: publishedForm });
+    } catch (error) {
+      logger.error("PUT /api/v1/forms/publish -> error : ", error);
+  
+      return res
+        .status(500)
+        .json({ success: false, message: INTERNAL_SERVER_ERROR_MESSAGE });
+    }
+  });
+  
+  // DELETE a particular form for user
+  router.delete("/:formRef", async (req, res) => {
+    try {
+      const token = await validateToken(req.headers);
+  
+      if (token.error) {
+        return res
+          .status(token.status)
+          .json({ error: true, message: token.message });
+      }
+  
+      const { formRef } = req.params;
+  
+      await FormsModel.findOneAndRemove({ formRef });
+  
+      await InsightsModel.findOneAndRemove({ formRef });
+  
+      await ResponsesModel.findOneAndRemove({ formRef });
+  
+      await PublishedFormsModel.findOneAndRemove({ formRef });
+  
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      logger.error("DELETE /api/v1/forms -> error : ", error);
+  
+      return res
+        .status(500)
+        .json({ success: false, message: INTERNAL_SERVER_ERROR_MESSAGE });
+    }
+  });
+
+  module.exports = router;
