@@ -60,9 +60,13 @@ app.use(
   })
 );
 
+// ROUTES
 const userRoutes = require("./src/api/v1/users");
+const formsRoutes = require("./src/api/v1/forms");
 
+// USE ROUTES
 app.use("/v1/users", userRoutes);
+app.use("/v1/forms", formsRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ success: true, message: "OK" });
