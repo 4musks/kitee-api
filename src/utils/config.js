@@ -13,6 +13,7 @@ const {
   AWS_REGION,
   AWS_ACCESS_KEY,
   AWS_SECRET_KEY,
+  DESTINATION_EMAIL,
 } = process.env;
 
 module.exports = {
@@ -25,4 +26,5 @@ module.exports = {
   AWS_REGION,
   AWS_ACCESS_KEY,
   AWS_SECRET_KEY,
+  DESTINATION_EMAIL,
 };
