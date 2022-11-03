@@ -80,6 +80,31 @@ router.get("/:formRef", async (req, res) => {
     }
 });
 
+// GET a particular published form for user
+router.get("/published/:formRef", async (req, res) => {
+    try {
+        const { formRef } = req.params;
+
+        const publishedForm = await PublishedFormsModel.findOne({
+            formRef
+        });
+
+        if (!publishedForm) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Published form does not exists." });
+        }
+
+        return res.status(200).json({ success: true, data: publishedForm });
+    } catch (error) {
+        logger.error("GET /api/v1/forms/published/:formRef -> error : ", error);
+
+        return res
+            .status(500)
+            .json({ success: false, message: INTERNAL_SERVER_ERROR_MESSAGE });
+    }
+});
+
 // PUT a particular form for user
 router.put("/", async (req, res) => {
     try {
