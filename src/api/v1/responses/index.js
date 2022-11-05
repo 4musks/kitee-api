@@ -8,7 +8,7 @@ const router = express.Router();
 const ResponsesModel = require("../../../models/Responses");
 const FormsModel = require("../../../models/Forms");
 const UsersModel = require("../../../models/Users");
-const { MAILGUN_FROM_EMAIL } = require("../../../utils/config");
+const { AWS_FROM_EMAIL } = require("../../../utils/config");
 const { INTERNAL_SERVER_ERROR_MESSAGE } = require("../../../utils/constants");
 const logger = require("../../../utils/logger");
 
@@ -35,7 +35,7 @@ router.post("/", async (req, res) => {
       const { email } = user;
       // Create sendEmail params 
       var params = {
-        Source: MAILGUN_FROM_EMAIL,
+        Source: AWS_FROM_EMAIL,
         Destination: { 
           ToAddresses: [email]},
         Message: {
@@ -46,7 +46,7 @@ router.post("/", async (req, res) => {
           Body: { 
             Html: {
             Charset: "UTF-8",
-            Data: response
+            Data: 'response placeholder'
             }
           }          
         }
