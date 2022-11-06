@@ -8,6 +8,8 @@ const { UserRoles } = require("../../../utils/constants");
 const { createSalt, hashPassword, encodeJWT } = require("../../../utils/jwt");
 const { validateToken } = require("../../../utils/common");
 const { INTERNAL_SERVER_ERROR_MESSAGE } = require("../../../utils/constants");
+const { AWS_FROM_EMAIL } = require("../../../utils/config");
+const { decodeJWT } = require("../../../utils/jwt");
 const logger = require("../../../utils/logger");
 
 router.post("/signup", async (req, res) => {
@@ -138,5 +140,109 @@ router.get("/info", async (req, res) => {
       .json({ success: false, message: INTERNAL_SERVER_ERROR_MESSAGE });
   }
 });
+
+router.post("/trigger-email-verification", async (req, res) => {
+  try {
+    const token = await validateToken(req.headers);
+
+    if (token.error) {
+      return res
+        .status(token.status)
+        .json({ success: false, message: token.message });
+    }
+
+    const { email } = req.body;
+
+    const link = `${APP_URL}/verify-email/${encodeJWT({
+      email
+    })}`;
+
+      // Create sendEmail params
+      const params = {
+        Source: AWS_FROM_EMAIL,
+        Destination: {
+          ToAddresses: [email],
+        },
+        Message: {
+          Subject: {
+            Charset: "UTF-8",
+            Data: "Verify your email!",
+          },
+          Body: {
+            Html: {
+              Charset: "UTF-8",
+              Data: `Hey there, hope you are doing good!\n\nPlease verify your email by clicking on this link:\n${link}`,
+            },
+          },
+        },
+      };
+
+    // send email verification notification
+      const sendPromise = new AWS.SES({ apiVersion: "2010-12-01" })
+      .sendEmail(params)
+      .promise();
+
+    // Handle promise's fulfilled/rejected states
+    sendPromise
+      .then(function (data) {
+        logger.info(data.MessageId);
+      })
+      .catch(function (err) {
+        logger.error(err, err.stack);
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "Please check your email to continue with verification."
+    });
+  } catch (error) {
+    logger.error(
+      "POST /api/v1/users/trigger-email-verification -> error : ",
+      error
+    );
+
+    return res
+      .status(500)
+      .json({ success: false, message: INTERNAL_SERVER_ERROR_MESSAGE });
+  }
+});
+
+router.post("/verify-email", async (req, res) => {
+  try {
+    const { emailToken } = req.body;
+
+    const decodedEmailToken = decodeJWT(emailToken);
+
+    if (!decodedEmailToken || !decodedEmailToken.email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid email token." });
+    }
+
+    const user = await UsersModel.findOne({ email: decodedEmailToken.email });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email verification failed." });
+    }
+
+    await UsersModel.findOneAndUpdate(
+      { email: decodedEmailToken.email },
+      { isEmailVerified: true }
+    );
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Email verification successful." });
+  } catch (error) {
+    logger.error("POST /api/v1/users/verify-email -> error : ", error);
+
+    return res
+      .status(500)
+      .json({ success: false, message: INTERNAL_SERVER_ERROR_MESSAGE });
+  }
+});
+
 
 module.exports = router;
