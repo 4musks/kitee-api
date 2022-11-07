@@ -8,9 +8,16 @@ const { UserRoles } = require("../../../utils/constants");
 const { createSalt, hashPassword, encodeJWT } = require("../../../utils/jwt");
 const { validateToken } = require("../../../utils/common");
 const { INTERNAL_SERVER_ERROR_MESSAGE } = require("../../../utils/constants");
-const { AWS_FROM_EMAIL } = require("../../../utils/config");
+const {
+  AWS_FROM_EMAIL,
+  APP_URL,
+  AWS_REGION,
+} = require("../../../utils/config");
 const { decodeJWT } = require("../../../utils/jwt");
 const logger = require("../../../utils/logger");
+
+const AWS = require("aws-sdk");
+AWS.config.update({ region: AWS_REGION });
 
 router.post("/signup", async (req, res) => {
   try {
@@ -154,31 +161,31 @@ router.post("/trigger-email-verification", async (req, res) => {
     const { email } = req.body;
 
     const link = `${APP_URL}/verify-email/${encodeJWT({
-      email
+      email,
     })}`;
 
-      // Create sendEmail params
-      const params = {
-        Source: AWS_FROM_EMAIL,
-        Destination: {
-          ToAddresses: [email],
+    // Create sendEmail params
+    const params = {
+      Source: AWS_FROM_EMAIL,
+      Destination: {
+        ToAddresses: [email],
+      },
+      Message: {
+        Subject: {
+          Charset: "UTF-8",
+          Data: "Verify your email!",
         },
-        Message: {
-          Subject: {
+        Body: {
+          Html: {
             Charset: "UTF-8",
-            Data: "Verify your email!",
-          },
-          Body: {
-            Html: {
-              Charset: "UTF-8",
-              Data: `Hey there, hope you are doing good!\n\nPlease verify your email by clicking on this link:\n${link}`,
-            },
+            Data: `Hey there, hope you are doing good!\n\nPlease verify your email by clicking on this link:\n${link}`,
           },
         },
-      };
+      },
+    };
 
     // send email verification notification
-      const sendPromise = new AWS.SES({ apiVersion: "2010-12-01" })
+    const sendPromise = new AWS.SES({ apiVersion: "2010-12-01" })
       .sendEmail(params)
       .promise();
 
@@ -193,7 +200,7 @@ router.post("/trigger-email-verification", async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Please check your email to continue with verification."
+      message: "Please check your email to continue with verification.",
     });
   } catch (error) {
     logger.error(
@@ -243,6 +250,5 @@ router.post("/verify-email", async (req, res) => {
       .json({ success: false, message: INTERNAL_SERVER_ERROR_MESSAGE });
   }
 });
-
 
 module.exports = router;
