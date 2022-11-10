@@ -77,7 +77,7 @@ app.use("/v1/responses", responses);
 app.use("/v1/insights", insights);
 
 app.get("/", (req, res) => {
-  res.status(200).json({ success: true, message: "OK" });
+  res.status(200).json({ success: true, message: "Howdy!!!" });
 });
 
 const server = app.listen(PORT, () => {
