@@ -178,7 +178,14 @@ router.post("/trigger-email-verification", async (req, res) => {
         Body: {
           Html: {
             Charset: "UTF-8",
-            Data: `Hey there, hope you are doing good!\n\nPlease verify your email by clicking on this link:\n${link}`,
+            Data: `
+                <p>            
+                  Hey there, hope you are doing good!
+                </p>              
+                <p>Please verify your email by clicking on the below link, <br />
+                  ${link}
+                </p>
+            `,
           },
         },
       },
