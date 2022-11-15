@@ -1,8 +1,11 @@
 const express = require("express");
-const { AWS_REGION } = require("../../../utils/config");
-
+const moment = require("moment-timezone");
+const {
+  AWS_REGION,
+  AWS_ACCESS_KEY,
+  AWS_SECRET_KEY,
+} = require("../../../utils/config");
 const AWS = require("aws-sdk");
-AWS.config.update({ region: AWS_REGION });
 
 const router = express.Router();
 const ResponsesModel = require("../../../models/Responses");
@@ -14,6 +17,11 @@ const {
   INTERNAL_SERVER_ERROR_MESSAGE,
 } = require("../../../utils/constants");
 const logger = require("../../../utils/logger");
+AWS.config.update({
+  region: AWS_REGION,
+  accessKeyId: AWS_ACCESS_KEY,
+  secretAccessKey: AWS_SECRET_KEY,
+});
 
 const renderAnswer = (response) => {
   if (response.type === QuestionType.STATEMENT) {
