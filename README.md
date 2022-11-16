@@ -112,4 +112,4 @@ Kitee is a SaaS (Software as a Service) offering where customers can buy subscri
 
     - Open [http://localhost:7000](http://localhost:7000) to view kitee-api status.
 
-    ![mongoDB](screenshots/3.kitee-api-howdy.png)
+    ![kite-api-howdy](screenshots/3.kitee-api-howdy.png)
