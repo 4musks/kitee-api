@@ -63,8 +63,8 @@ Kitee is a SaaS (Software as a Service) offering where customers can buy subscri
     $ npm -version
     8.1.2
     $ aws configure
-    AWS Access Key ID [None]: AKIAIOSFODNN7EXAMPLE
-    AWS Secret Access Key [None]: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    AWS Access Key ID [None]: <access-id>
+    AWS Secret Access Key [None]: <secret-key>
     Default region name [None]: us-west-1
     Default output format [None]: json
     ```
